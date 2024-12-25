@@ -31,8 +31,19 @@ function buildFastify() {
       serializers: {
         req: function (req) {
           const referer = req?.headers?.referer
+          const userAgent = req?.headers?.['user-agent']
           const remoteAddress = req?.socket?.remoteAddress
-          return { url: req.url, referer, remoteAddress }
+          const origin = req?.headers?.origin
+          const host = req?.headers?.host
+          return {
+            url: req.url,
+            method: req.method,
+            referer,
+            userAgent,
+            remoteAddress,
+            origin,
+            host,
+          }
         },
       },
       // file: "./.logs/zieg.json", // Will use pino.destination()
