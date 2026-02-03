@@ -178,8 +178,6 @@ CREATE TABLE acikkuran_user_translations (
     user_id VARCHAR(255) NOT NULL,
     verse_id INTEGER NOT NULL REFERENCES acikkuran_verses(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
-    language VARCHAR(10) DEFAULT 'tr',
-    is_public BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(user_id, verse_id)
@@ -222,7 +220,6 @@ CREATE INDEX idx_roots_rootchar_id ON acikkuran_roots(rootchar_id);
 -- User translations indexes
 CREATE INDEX idx_user_translations_user_id ON acikkuran_user_translations(user_id);
 CREATE INDEX idx_user_translations_verse_id ON acikkuran_user_translations(verse_id);
-CREATE INDEX idx_user_translations_public ON acikkuran_user_translations(is_public);
 CREATE INDEX idx_user_footnotes_user_translation_id ON acikkuran_user_footnotes(user_translation_id);
 CREATE INDEX idx_user_footnotes_user_id ON acikkuran_user_footnotes(user_id);
 
