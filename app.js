@@ -90,10 +90,11 @@ function buildFastify() {
   fastify.register(require('./routes/roots'), { logLevel: 'debug' })
   fastify.register(require('./routes/pages'), { logLevel: 'debug' })
   fastify.register(require('./routes/searches'), { logLevel: 'debug' })
+  fastify.register(require('./routes/userTranslations'), { logLevel: 'debug', })
 
   fastify.register(FastifyCors, {
     origin: '*',
-    methods: ['GET', 'OPTIONS'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
   })
 
