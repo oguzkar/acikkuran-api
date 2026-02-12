@@ -2,38 +2,45 @@ const { isNumeric } = require('../utils/funcs')
 const authenticate = require('../middleware/authenticate')
 
 async function routes(fastify) {
-  // GET /user/translation?user_id=...&verse_id=...
-  // Public read: any user can view translations by user_id + verse_id
-  fastify.get('/user/translation', async (req, reply) => {
-    const { user_id: userId, verse_id: verseId } = req.query
+  // GET /user/translation?verse_id=...
+  // SECURITY: user_id is extracted from the JWT token, NOT from query params.
+  // This prevents users from accessing other users' private translations.
+  fastify.get(
+    '/user/translation',
+    { preHandler: [authenticate] },
+    async (req, reply) => {
+      // user_id comes from the verified JWT – not from the request query
+      const userId = req.user.id
+      const { verse_id: verseId } = req.query
 
-    if (!userId || !verseId || !isNumeric(+verseId)) {
-      return reply.status(400).send({ error: 'invalid-params' })
-    }
-
-    try {
-      const result = await fastify.pg.query(
-        'SELECT id, user_id, verse_id, text, created_at, updated_at FROM acikkuran_user_translations WHERE user_id = $1 AND verse_id = $2 LIMIT 1',
-        [userId, verseId]
-      )
-
-      const translation = result?.rows?.[0] || null
-      
-      // Fetch footnotes if translation exists
-      if (translation) {
-        const footnotesResult = await fastify.pg.query(
-          'SELECT number, text FROM acikkuran_user_footnotes WHERE user_translation_id = $1 ORDER BY number',
-          [translation.id]
-        )
-        translation.footnotes = footnotesResult?.rows || []
+      if (!verseId || !isNumeric(+verseId)) {
+        return reply.status(400).send({ error: 'invalid-params' })
       }
-      
-      reply.send({ data: translation })
-    } catch (error) {
-      req.log.error({ err: error, userId, verseId }, 'user-translation-get-failed')
-      reply.status(500).send({ error: 'user-translation-get-failed' })
+
+      try {
+        const result = await fastify.pg.query(
+          'SELECT id, user_id, verse_id, text, created_at, updated_at FROM acikkuran_user_translations WHERE user_id = $1 AND verse_id = $2 LIMIT 1',
+          [userId, verseId]
+        )
+
+        const translation = result?.rows?.[0] || null
+
+        // Fetch footnotes if translation exists
+        if (translation) {
+          const footnotesResult = await fastify.pg.query(
+            'SELECT number, text FROM acikkuran_user_footnotes WHERE user_translation_id = $1 ORDER BY number',
+            [translation.id]
+          )
+          translation.footnotes = footnotesResult?.rows || []
+        }
+
+        reply.send({ data: translation })
+      } catch (error) {
+        req.log.error({ err: error, userId, verseId }, 'user-translation-get-failed')
+        reply.status(500).send({ error: 'user-translation-get-failed' })
+      }
     }
-  })
+  )
 
   // POST /user/translation
   // Protected: requires a valid JWT. The user_id is extracted from the
